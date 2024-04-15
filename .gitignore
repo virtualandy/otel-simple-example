@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# Don't need the executable
+dice
