@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
@@ -67,9 +70,33 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
+func createOtelExporter(exporterType string) (trace.SpanExporter, error) {
+	var exporter trace.SpanExporter
+	var err error
+	switch exporterType {
+	case "otlp":
+		var opts []otlptracehttp.Option
+		/*
+		 * We're not using https, but if we were, could switch on it here
+		 *	if !withSecure() {
+		 *	  opts = []otlptracehttp.Option{otlptracehttp.WithInsecure()}
+		 *	}
+		 */
+		exporter, err = otlptrace.New(
+			context.Background(),
+			otlptracehttp.NewClient(opts...),
+		)
+	case "stdout":
+		exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
+	default:
+		return nil, fmt.Errorf("unrecognized exporter type %s", exporterType)
+	}
+	return exporter, err
+}
+
 func newTraceProvider() (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(
-		stdouttrace.WithPrettyPrint())
+	// Swap this to "stdout" to get traces written to console
+	traceExporter, err := createOtelExporter("otlp")
 	if err != nil {
 		return nil, err
 	}
@@ -95,4 +122,3 @@ func newMeterProvider() (*metric.MeterProvider, error) {
 	)
 	return meterProvider, nil
 }
-
