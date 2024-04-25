@@ -96,7 +96,7 @@ func createOtelExporter(exporterType string) (trace.SpanExporter, error) {
 
 func newTraceProvider() (*trace.TracerProvider, error) {
 	// Swap this to "stdout" to get traces written to console
-	traceExporter, err := createOtelExporter("otlp")
+	traceExporter, err := createOtelExporter("stdout")
 	if err != nil {
 		return nil, err
 	}
