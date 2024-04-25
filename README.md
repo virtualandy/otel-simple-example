@@ -8,7 +8,7 @@ Follow the instructions at [the OpenTelemetry go page](https://opentelemetry.io/
 
 ## Using this Repo
 
-Run the `TBD` branch to run without any otel.
+Run the `getting-started` branch to run without any otel.
 Run the `otel-with-stdout` branch to run and have the otel exported to stdout
 
 ### Visualizing Traces with Jaeger
