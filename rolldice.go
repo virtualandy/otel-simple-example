@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -38,13 +37,15 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 	roll := 1 + rand.Intn(6)
 
 	// Sleep for a few seconds, so we can see longer traces
+	// And breakout the slow api call versus other work
+	// that might be done in this function, i.e. a DB query
 	time.Sleep(time.Millisecond * time.Duration(roll*100))
 
-	ctx, childSpan := tracer.Start(ctx, "child")
-	// defer childSpan.End()
-	span.AddEvent("calling external api")
-	callAPI(500 * roll)
-	childSpan.End()
+	span.AddEvent("simulating a call to slow api")
+	err := simulateSlowAPI(500*roll, ctx)
+	if err != nil {
+		log.Printf("Failed to make call to simulate slow api")
+	}
 
 	rollValueAttr := attribute.Int("roll.value", roll)
 	span.SetAttributes(rollValueAttr)
@@ -57,7 +58,9 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 }
 
 // A function for simulating slowness with an external http call
-func callAPI(sleepInMilliseconds int) {
+func simulateSlowAPI(sleepInMilliseconds int, ctx context.Context) error {
+	ctx, childSpan := tracer.Start(ctx, "simulatedSlowApiSpan")
+	defer childSpan.End()
 	// Construct the URL with the sleep parameter
 	baseURL := "https://fakeresponder.com/"
 	sleepParam := "?sleep=" + strconv.Itoa(sleepInMilliseconds)
@@ -66,20 +69,21 @@ func callAPI(sleepInMilliseconds int) {
 	fullURL := baseURL + sleepParam
 
 	// Make the GET request
+	childSpan.AddEvent("GET fakeresponder.com api")
 	resp, err := http.Get(fullURL)
 	if err != nil {
-		fmt.Println("Error making the GET request:", err)
-		return
+		log.Println("Error making the GET request:", err)
+		return err
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading the response body:", err)
-		return
-	}
+	// We can ignore the response body
+	// But if you want to see it, uncomment this
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Println("Error reading the response body:", err)
+	// 	return err
+	// }
 
-	fmt.Println("Response Status:", resp.Status)
-	fmt.Println("Response Body:", string(body))
+	return nil
 }
