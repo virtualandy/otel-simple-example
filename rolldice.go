@@ -17,10 +17,10 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 	// that might be done in this function, i.e. a DB query
 	time.Sleep(time.Millisecond * time.Duration(roll*100))
 
-	log.Println("simulating a call to slow api")
+	log.Println("simulating a call to external api")
 	err := simulateSlowAPI(500 * roll)
 	if err != nil {
-		log.Printf("Failed to make call to simulate slow api")
+		log.Printf("Failed to make call to external api")
 	}
 
 	resp := strconv.Itoa(roll) + "\n"
