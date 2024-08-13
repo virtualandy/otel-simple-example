@@ -76,9 +76,9 @@ func newHTTPHandler() http.Handler {
 
 	// Register handlers.
 	handleFunc("/rolldice", rolldice)
+	log.Println("running @ localhost:8000")
 
 	// Add HTTP instrumentation for the whole server.
 	handler := otelhttp.NewHandler(mux, "/")
 	return handler
 }
-
